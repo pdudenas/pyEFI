@@ -1,0 +1,41 @@
+def EFI_NSBS(Naf_t, SBS_t, c_d, c_b, alpha_i):
+    EFI_tot = np.zeros((int(Naf_t/2)+int(SBS_t/2)+100,len(alpha_i)))
+    SBSd_new = np.zeros(Naf_d.shape)
+    SBSb_new = np.zeros(Naf_b.shape)
+    SBSd_new[0:2] = SBS_d[0:2]
+    SBSd_new[2] = c_d
+    SBSb_new[0:2] = SBS_b[0:2]
+    SBSb_new[2] = c_b
+    for i, E in enumerate(dE_values):
+#         n_SBS = index_calc(E,SBS_d,SBS_b)
+        n_Si = index_calc(E,Si_d,Si_b)
+        n_Naf = index_calc(E,Naf_d,Naf_b)
+        n_SBS = index_calc(E,SBSd_new,SBSb_new)
+        wvl = wvl_calc(E)
+        z_layers, n_layers = layer_builder((complex(1,0),n_Naf,n_SBS,n_Si),(100,Naf_t,SBS_t,100),(10,10,10),2)
+        Rf, EFI = EFI_vec(wvl,z_layers,n_layers,alpha_i)
+        EFI_tot += EFI*dE_weights[i]
+    return EFI_tot
+
+
+def DE_func(x,xdata,ydata, yerror):
+    EFI = EFI_NSBS(x[0],x[1],x[2], x[3], xdata)
+    ydata_norm = ydata/ydata[10]
+    y_top = EFI[50,:]/EFI[50,10]
+#     scaling_factor = np.mean(ydata_norm[:5]/y_top[:5])
+#     y_top = y_top*scaling_factor
+    y_bottom = ydata_norm - y_top
+    end_layer1 = int(x[0]/2)+50
+    y_model = EFI[end_layer1,:]*x[4] + EFI[-50,:]*x[5]
+    SE = np.sum(((y_bottom - y_model)/yerror)**2)
+    return SE
+    
+    offset_values = np.arange(0.014,0.019,0.001)
+error = np.zeros(len(offset_values))
+opt_params = np.zeros((len(offset_values),6))
+for i, val in enumerate(offset_values):
+    bounds = [(450,500),(375,475),(SBS_d[2]*0.95,SBS_d[2]*1.05),(SBS_b[2]*0.95,SBS_b[2]*1.05),(0,1),(0,1)]
+    result = differential_evolution(DE_func,bounds,args=(xdata+np.deg2rad(val),ydata,yerror),polish=True)
+    error = result.fun
+    opt_params[i,:] = result.x
+    print(val,error)
