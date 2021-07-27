@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import scipy.special
 from numba import njit
 
-
+# test 2
 class reflect_tools:
     """collection of function to build thin film stacks and simulate x-ray
         reflectivity with s or p polarization"""
