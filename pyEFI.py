@@ -3,9 +3,9 @@ import matplotlib.pyplot as plt
 import scipy.special
 from numba import njit
 
-
+#test github push
 class reflect_tools:
-    """collection of function to build thin film stacks and simulate x-ray 
+    """collection of function to build thin film stacks and simulate x-ray
         reflectivity with s or p polarization"""
 
 #     def __init__(self):
@@ -60,7 +60,7 @@ class reflect_tools:
         e = 1.06218e-19 # electron charge
         wvl = c*h/energy/e*1e10 # nm
         return wvl
-    
+
     @njit
     def reflect_s(wavelength, z_layers,n_layers,alpha_i):
         n_layers = n_layers.reshape(len(n_layers),1)
@@ -84,7 +84,7 @@ class reflect_tools:
         Rf = X[0,:]
         return Rf
 
-    
+
     @njit
     def reflect_p(wavelength, z_layers, n_layers, alpha_i):
         n_layers = n_layers.reshape(len(n_layers),1)
@@ -109,9 +109,9 @@ class reflect_tools:
         return Rf
 
 class EFI_tools:
-    """ collection of tools to build thin films and calculate electric 
+    """ collection of tools to build thin films and calculate electric
         field intensities as a function of film depth and incidence angle"""
-    
+
     def layer_builder(layer_n,layer_t,interface_rough,slice_t):
         # self.layer_n = layer_n
         # self.layer_t = layer_t
@@ -154,29 +154,29 @@ class EFI_tools:
             # self.n_layers = total_layer
         return z, total_layer
 
-    @njit 
+    @njit
     def EFI_s(wavelength, z_layers,n_layers,alpha_i):
         n_layers = n_layers.reshape(len(n_layers),1)
         z_layers = z_layers.reshape(len(z_layers),1)
-        
+
         k0 = 2*np.pi/wavelength
         R = np.zeros((len(n_layers),len(alpha_i)),dtype=np.complex_)
         T = np.zeros((len(n_layers),len(alpha_i)),dtype=np.complex_)
         X = np.zeros((len(n_layers),len(alpha_i)),dtype=np.complex_)
         EFI = np.zeros((len(n_layers),len(alpha_i)))
         Rf = np.zeros((len(alpha_i),1),dtype=np.complex_)
-        
+
         # z-component of wavevector
         kz = k0*np.sqrt(n_layers**2-np.cos(alpha_i)**2)
-        
+
         r = (kz[0:-1,:] - kz[1:len(n_layers)+1,:])/(kz[0:-1,:] + kz[1:len(n_layers)+1,:])
-        
+
         # Recursion to calculate reflectivity at surface
         for i in range(len(n_layers)-2,-1,-1):
-            X[i,:] = (np.exp(-2.j*kz[i,:]*z_layers[i]) * 
-                    (r[i,:]+X[i+1,:]*np.exp(2.j*kz[i+1,:]*z_layers[i])) / 
+            X[i,:] = (np.exp(-2.j*kz[i,:]*z_layers[i]) *
+                    (r[i,:]+X[i+1,:]*np.exp(2.j*kz[i+1,:]*z_layers[i])) /
                     (1+r[i,:]*X[i+1,:]*np.exp(2.j*kz[i+1,:]*z_layers[i])))
-        
+
         Rf = X[0,:]
         R[0,:] = X[0,:]
         T[0,:] = 1
@@ -184,11 +184,11 @@ class EFI_tools:
         rj1j = (kz[1:len(n_layers)+1,:] - kz[0:-1,:])/(kz[0:-1,:] + kz[1:len(n_layers)+1,:])
         tj1j = (1 + rj1j)
         for i in range(0,len(n_layers)-1):
-            R[i+1,:] = ((1/tj1j[i,:]) * 
-                      (T[i,:]*rj1j[i,:]*np.exp(-1.j*(kz[i+1,:] + kz[i,:])*z_layers[i]) + 
+            R[i+1,:] = ((1/tj1j[i,:]) *
+                      (T[i,:]*rj1j[i,:]*np.exp(-1.j*(kz[i+1,:] + kz[i,:])*z_layers[i]) +
                       R[i,:]*np.exp(-1.j*(kz[i+1,:] - kz[i,:])*z_layers[i])))
-            T[i+1,:] = ((1/tj1j[i,:]) * 
-                      (T[i,:]*np.exp(1.j*(kz[i+1,:] - kz[i,:])*z_layers[i]) + 
+            T[i+1,:] = ((1/tj1j[i,:]) *
+                      (T[i,:]*np.exp(1.j*(kz[i+1,:] - kz[i,:])*z_layers[i]) +
                       R[i,:]*rj1j[i,:]*np.exp(1.j*(kz[i+1,:] + kz[i,:])*z_layers[i])))
         R[-1,:] = 0
         ER = R*np.exp(1.j*kz*z_layers)
@@ -196,22 +196,22 @@ class EFI_tools:
     #     print(ET.shape,ER.shape)
         EFI = (np.abs(ER + ET)**2)
         return Rf, EFI
-    
-    @njit 
+
+    @njit
     def EFI_p(wavelength, z_layers,n_layers,alpha_i):
         n_layers = n_layers.reshape(len(n_layers),1)
         z_layers = z_layers.reshape(len(z_layers),1)
-        
+
         k0 = 2*np.pi/wavelength
         R = np.zeros((len(n_layers),len(alpha_i)),dtype=np.complex_)
         T = np.zeros((len(n_layers),len(alpha_i)),dtype=np.complex_)
         X = np.zeros((len(n_layers),len(alpha_i)),dtype=np.complex_)
         EFI = np.zeros((len(n_layers),len(alpha_i)))
         Rf = np.zeros((len(alpha_i),1),dtype=np.complex_)
-        
+
         # z-component of wavevector
         kz = k0*np.sqrt(n_layers**2-np.cos(alpha_i)**2)
-        
+
         n = n_layers[1:]/n_layers[0:-1]
         r = (-n**2*kz[0:-1,:] + kz[1:len(n_layers)+1,:])/(n**2*kz[0:-1,:] + kz[1:len(n_layers)+1,:])
 
@@ -219,7 +219,7 @@ class EFI_tools:
         for i in range(len(n_layers)-2,-1,-1):
             X[i,:] = np.exp(-2.j*kz[i,:]*(z_layers[i]))*((r[i,:]+X[i+1,:]*np.exp(2.j*kz[i+1,:]*(z_layers[i]))) /\
                     (1+r[i,:]*X[i+1,:]*np.exp(2.j*kz[i+1,:]*(z_layers[i]))))
-        
+
         Rf = X[0,:]
         R[0,:] = X[0,:]
         T[0,:] = 1
@@ -229,11 +229,11 @@ class EFI_tools:
         # tj1j = 2*n*kz[1:len(n_layers)+1,:]/(n**2*kz[1:len(n_layers)+1,:]+kz[0:-1,:])
         tj1j = 1+rj1j
         for i in range(0,len(n_layers)-1):
-            R[i+1,:] = ((1/tj1j[i,:]) * 
-                      (T[i,:]*rj1j[i,:]*np.exp(-1.j*(kz[i+1,:] + kz[i,:])*z_layers[i]) + 
+            R[i+1,:] = ((1/tj1j[i,:]) *
+                      (T[i,:]*rj1j[i,:]*np.exp(-1.j*(kz[i+1,:] + kz[i,:])*z_layers[i]) +
                       R[i,:]*np.exp(-1.j*(kz[i+1,:] - kz[i,:])*z_layers[i])))
-            T[i+1,:] = ((1/tj1j[i,:]) * 
-                      (T[i,:]*np.exp(1.j*(kz[i+1,:] - kz[i,:])*z_layers[i]) + 
+            T[i+1,:] = ((1/tj1j[i,:]) *
+                      (T[i,:]*np.exp(1.j*(kz[i+1,:] - kz[i,:])*z_layers[i]) +
                       R[i,:]*rj1j[i,:]*np.exp(1.j*(kz[i+1,:] + kz[i,:])*z_layers[i])))
         R[-1,:] = 0
         ER = R*np.exp(1.j*kz*z_layers)
@@ -243,7 +243,7 @@ class EFI_tools:
         return Rf, EFI, ER, ET, R, T
 
 if __name__ == '__main__':
-    
+
     from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
     alpha_i = np.deg2rad(np.arange(0.1,89,.5))
@@ -255,7 +255,7 @@ if __name__ == '__main__':
     delta_PMMA = 0.00146372709
     beta_PMMA = 0.000126856146
     n_PMMA = np.complex(1-delta_PMMA,beta_PMMA)
-    
+
     delta_PS = 0.000624888053
     beta_PS = 6.27421832E-05
     n_PS = np.complex(1-delta_PS,beta_PS)
@@ -281,11 +281,11 @@ if __name__ == '__main__':
     axin = inset_axes(ax,width='35%',height='35%')
     axin.plot(-z_layers,1-n_layers.real)
     plt.show()
-    
+
     # _, EFI_s = EFI_tools.EFI_s(wvl,z_layers,n_layers,alpha_i)
     # plt.figure()
     # plt.imshow(EFI_s,cmap='jet',aspect='auto',extent=[0.1,89,-700,100])
-    
+
     # Rp, EFI_p, ER, ET, R, T = EFI_tools.EFI_p(wvl,z_layers,n_layers,alpha_i)
     # plt.figure()
     # plt.imshow(EFI_p,cmap='jet',aspect='auto',extent=[0.1,89,-700,100])
@@ -295,17 +295,17 @@ if __name__ == '__main__':
     # delta_PMMA = 4.0918294E-06
     # beta_PMMA = 8.91067753E-09
     # n_PMMA = np.complex(1-delta_PMMA,beta_PMMA)
-    
+
     # # Polystyrene
     # delta_PS = 3.45346848E-06
     # beta_PS = 4.89482366E-09
     # n_PS = np.complex(1-delta_PS, beta_PS)
-    
+
     # # Silicon
     # delta_Si = 7.57536282E-06
     # beta_Si = 1.72802345E-07
     # n_Si = np.complex(1-delta_Si, beta_Si)
-    
+
     # alpha_i = np.deg2rad(np.arange(0.1,.4,.0001))
     # z_layers, n_layers = reflect_tools.layer_builder((n_air,n_PS,n_PMMA,n_Si),(100,t_PS,t_PMMA,100),(0,0,0),2)
     # Rp = reflect_tools.reflect_p(1.54,z_layers,n_layers,alpha_i)
@@ -323,11 +323,11 @@ if __name__ == '__main__':
     # axin = inset_axes(ax,width='35%',height='35%')
     # axin.plot(-z_layers,1-n_layers.real)
     # plt.show()
-    
+
     # _, EFI_s = EFI_tools.EFI_s(1.54,z_layers,n_layers,alpha_i)
     # plt.figure()
     # plt.imshow(EFI_s,cmap='jet',aspect='auto',extent=[0.1,89,-700,100])
-    
+
     # Rp, EFI_p, ER, ET, R, T = EFI_tools.EFI_p(1.54,z_layers,n_layers,alpha_i)
     # plt.figure()
     # plt.imshow(EFI_p,cmap='jet',aspect='auto',extent=[0.1,89,-700,100])
